@@ -4,7 +4,7 @@
 1.0
 </version>
 <name>
-Lexer
+Farth
 </name>
 <language>
 Python
@@ -13,7 +13,7 @@ Python
 Ivan Konovalov
 </authors>
 <description>
-Just a simple lexer
+Farth - is an attempt to implement Forth
 </description>
 <date>
 <day>
