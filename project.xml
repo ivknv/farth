@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project>
+<version>
+1.0
+</version>
+<name>
+Lexer
+</name>
+<language>
+Python
+</language>
+<authors>
+Ivan Konovalov
+</authors>
+<description>
+Just a simple lexer
+</description>
+<date>
+<day>
+6
+</day>
+<month>
+8
+</month>
+<year>
+2014
+</year>
+<weekday>
+Wednesday
+</weekday>
+<hour>
+13
+</hour>
+<minute>
+25
+</minute>
+<second>
+52
+</second>
+</date>
+<referenced>
+
+</referenced>
+</project>
