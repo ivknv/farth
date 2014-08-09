@@ -11,6 +11,8 @@ Farth - an attempt to implement Forth
 import re
 from inspect import ismethod
 
+VERSION = "0.1.1"
+
 DEF_WORD = ":"
 END_DEF_WORD = ";"
 PLUS = "+"
