@@ -20,11 +20,11 @@ def dup():
 	global stack
 	stack.append(stack[-1])
 
-def do_i():
+def do_cp_from_loop_stack():
 	global stack
 	stack.append(loop_list[-1][0])
 
-def equal():
+def equals():
 	global stack
 	left = stack.pop()
 	right = stack.pop()
@@ -40,20 +40,41 @@ def remove_from_stack():
 	global stack
 	stack.pop()
 
-def do_l():
+def do_rm_from_loop_stack():
 	global loop_list, loop_n, stack
 	loop_list[0] = stack.pop()
 
-words = {"def": [6, do_pass],
-	";": [7, do_pass],
-	"+": [8, lambda x, y: x+y], " ": [19, do_pass],
-	"-": [20, lambda x, y: x-y], "*": [21, lambda x, y: x*y],
-	"/": [22, lambda x, y: float(x)/float(y)],
-	"%": [23, lambda x, y: x%y], ".": [24, remove_from_stack],
-	"print": [29, do_print], "do": [30, do_pass],
-	"dup": [25, dup], "if": [26, do_pass], "loop": [31, do_pass],
-	"=": [27, equal], "endif": [28, do_pass], "include": [32, do_include],
-	".l": [33, do_l], "i": [34, do_i], "else": [35, do_pass]}
+DEF_WORD = ":"
+END_DEF_WORD = ";"
+PLUS = "+"
+MINUS = "-"
+MODULO = "%"
+DIV = "/"
+MUL = "*"
+DUP = "dup"
+DO = "do"
+LOOP = "loop"
+EQUALS = "="
+PRINT = "print"
+IF = "if"
+ELSE = "else"
+ENDIF = "endif"
+RM = "."
+CP_FROM_LOOP_STACK = "i"
+RM_FROM_LOOP_STACK = ".l"
+INCLUDE = "include"
+
+words = {DEF_WORD: do_pass,
+	END_DEF_WORD: do_pass,
+	PLUS: lambda x, y: x+y,
+	MINUS: lambda x, y: x-y, MUL: lambda x, y: x*y,
+	DIV: lambda x, y: float(x)/float(y),
+	MODULO: lambda x, y: x%y, RM: remove_from_stack,
+	PRINT: do_print, DO: do_pass,
+	DUP: dup, IF: do_pass, LOOP: do_pass,
+	EQUALS: equals, ENDIF: do_pass, INCLUDE: do_include,
+	RM_FROM_LOOP_STACK: do_rm_from_loop_stack,
+	CP_FROM_LOOP_STACK: do_cp_from_loop_stack, ELSE: do_pass}
 
 stack = []
 def_stack = []
@@ -69,7 +90,7 @@ i = 0
 code = {}
 code_str = ""
 
-def find_words(s, word=words):
+def find_words(s):
 	found_words = {}
 	lines = s.split("\n")
 	for i in range(len(lines)):
@@ -81,13 +102,6 @@ def find_words(s, word=words):
 	
 	return found_words
 
-def get_newid():
-	max_ = 0
-	for word in words:
-		max_ = max(words[word][0], max_)
-	
-	return max_
-
 def def_word(def_stack):
 	global words
 	word = def_stack[0]
@@ -96,8 +110,20 @@ def def_word(def_stack):
 	if len(word_body) > 1:
 		for w in word_body[1:]:
 			new_word += " "+w
-	print("New word: %s %s" %(word, new_word))
-	words[word] = [get_newid(), lambda: execute_string(new_word)]
+	
+	def f():
+		global i, pos, code, code_str
+		i_before = i
+		pos_before = pos
+		code_before = code
+		code_str_before = code_str
+		execute_string(new_word, custom_func=True)
+		i = i_before
+		pos = pos_before
+		code = code_before
+		code_str = code_str_before
+	
+	words[word] = f
 
 def execute_list(words):
 	string = words[0]
@@ -107,7 +133,22 @@ def execute_list(words):
 	
 	execute_string(string)
 
-def execute(found_words):
+def debug():
+	print("================")
+	print("stack length: %d" %len(stack))
+	print("code: %s" %code)
+	print("def_n: %d" %def_n)
+	print("def_stack length: %d" %len(def_stack))
+	print("if_n: %d" %if_n)
+	print("if_list length: %d" %len(if_list))
+	print("loop_n: %d" %loop_n)
+	print("loop_list length: %d" %len(loop_list))
+	print("pos: %d:%d" %(pos[0], pos[1]))
+	print("i: %d" %i)
+	input(">>> ")
+	print("================")
+
+def execute(found_words, isWord=False):
 	global stack
 	global def_stack
 	global def_n
@@ -115,7 +156,11 @@ def execute(found_words):
 	global if_list, else_n
 	global loop_list
 	global loop_n
-	global pos, i
+	if not isWord:
+		global pos, i
+	else:
+		pos = (1, 1)
+		i = 0
 	
 	keys = sorted(list(found_words.keys()))
 	
@@ -127,10 +172,10 @@ def execute(found_words):
 		if len(word) == 0: # If word is empty
 			continue
 		elif def_n > 0:
-			if word != ";" or def_n > 1:
-				if word == "def":
+			if word != END_DEF_WORD or def_n > 1:
+				if word == DEF_WORD:
 					def_n += 1
-				elif word == ";":
+				elif word == END_DEF_WORD:
 					def_n -= 1
 				def_stack.append(word)
 			else:
@@ -139,18 +184,18 @@ def execute(found_words):
 					def_word(def_stack)
 					def_stack = []
 		elif if_n > 0:
-			if word == "else" and if_n == 1:
+			if word == ELSE and if_n == 1:
 				else_n = 1
-			elif else_n == 1 and (word != "endif" or if_n > 1):
-				if word == "endif":
+			elif else_n == 1 and (word != ENDIF or if_n > 1):
+				if word == ENDIF:
 					if_n -= 1
-				elif word == "if":
+				elif word == IF:
 					if_n += 1
 				if_list[1].append(word)
-			elif word != "endif" or if_n > 1: # endif
-				if word == "if":
+			elif word != ENDIF or if_n > 1:
+				if word == IF:
 					if_n += 1
-				elif word == "endif":
+				elif word == ENDIF:
 					if_n -= 1
 				if_list[0].append(word)
 			else:
@@ -165,7 +210,7 @@ def execute(found_words):
 				else:
 					if len(else_body) > 0:
 						execute_list(else_body)
-		elif loop_n > 0 and word == "loop": # loop
+		elif loop_n > 0 and word == LOOP:
 			if loop_list[0] == 1:
 				pos = loop_list[1]
 				i = keys.index(pos)
@@ -174,21 +219,20 @@ def execute(found_words):
 				del loop_list[0]
 		elif word[0] in '0123456789"':
 			stack.append(eval(word))
-		elif word == "if": # if
+		elif word == IF:
 			if_n += 1
 			if_list.append([])
 			if_list.append([])
-		elif word in words and words[word][0] == 6: # def
+		elif word == DEF_WORD:
 			def_n += 1
-		elif word in words and words[word][0] == 30: # do
+		elif word == DO:
 			loop_list.append(stack.pop())
 			loop_list.append(keys[keys.index(pos)+1])
 			loop_n += 1
 		else:
-			if word in stack:
-				stack.remove(word)
-			func = words[word][1]
+			func = words[word]
 			argcount = func.__code__.co_argcount # Get argument count
+			
 			if argcount > 0:
 				res = func(*stack[-argcount:])
 				stack = stack[0:-argcount]
@@ -197,9 +241,15 @@ def execute(found_words):
 			if res is not None:
 				stack.append(res)
 
-def execute_string(s):
+def execute_string(s, add_newline=False, custom_func=False):
 	global code, code_str
-	code_str += s+"\n"
-	found_words = find_words(code_str, words)
-	code.update(found_words)
-	execute(code)
+	if not custom_func:
+		code_str += s + " "
+		if add_newline:
+			code_str += "\n"
+		found_words = find_words(code_str)
+		code.update(found_words)
+		execute(code)
+	else:
+		found_words = find_words(s)
+		execute(found_words, isWord=True)
