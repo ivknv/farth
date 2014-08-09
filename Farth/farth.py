@@ -24,11 +24,29 @@ def do_cp_from_loop_stack():
 	global stack
 	stack.append(loop_list[-1][0])
 
-def equals():
+def equal():
 	global stack
 	left = stack.pop()
 	right = stack.pop()
 	stack.append(1 if left == right else 0)
+
+def not_equal():
+	global stack
+	left = stack.pop()
+	right = stack.pop()
+	stack.append(1 if left != right else 0)
+
+def less_or_equal():
+	global stack
+	left = stack.pop()
+	right = stack.pop()
+	stack.append(1 if left <= right else 0)
+
+def greater_or_equal():
+	global stack
+	left = stack.pop()
+	right = stack.pop()
+	stack.append(1 if left >= right else 0)
 
 def do_include(filename):
 	f = open(filename)
@@ -54,7 +72,10 @@ MUL = "*"
 DUP = "dup"
 DO = "do"
 LOOP = "loop"
-EQUALS = "="
+EQUAL = "="
+NOT_EQUAL = "!="
+LESS_OR_EQUAL = "<="
+GREATER_OR_EQUAL = ">="
 PRINT = "print"
 IF = "if"
 ELSE = "else"
@@ -72,7 +93,9 @@ words = {DEF_WORD: do_pass,
 	MODULO: lambda x, y: x%y, RM: remove_from_stack,
 	PRINT: do_print, DO: do_pass,
 	DUP: dup, IF: do_pass, LOOP: do_pass,
-	EQUALS: equals, ENDIF: do_pass, INCLUDE: do_include,
+	EQUAL: equal, NOT_EQUAL: not_equal,
+	LESS_OR_EQUAL: less_or_equal, GREATER_OR_EQUAL: greater_or_equal,
+	ENDIF: do_pass, INCLUDE: do_include,
 	RM_FROM_LOOP_STACK: do_rm_from_loop_stack,
 	CP_FROM_LOOP_STACK: do_cp_from_loop_stack, ELSE: do_pass}
 
