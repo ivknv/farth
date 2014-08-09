@@ -4,7 +4,7 @@
 from distutils.core import setup
 
 setup(name="Farth",
-	version="0.1.0",
+	version="0.1.1",
 	author="Ivan Konovalov",
 	author_email="rvan.mega@gmail.com",
 	description="Farth - is an attempt to implement Forth",
