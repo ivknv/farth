@@ -49,15 +49,17 @@ if __name__ == "__main__":
 	atexit.register(on_exit)
 	
 	msg = r"""
-    ///////  ///\\\         /////////  ///////////  ///
-   ///      ///  \\\       ///   ///      ///      ///
-  //////// /////\\\\\     /////////      ///      /////////
- ///      //////\\\\\\   ///\\\         ///      ///   ///
-///      ///        \\\ ///  \\\       ///      ///   ///
+    ///////  ///\\\         ////////  ///////////  ///   ///
+   ///      ///  \\\       ///  ///      ///      ///   ///
+  //////// ///____\\\     ////////      ///      /////////
+ ///      ///______\\\   ///\\\        ///      ///   ///
+///      ///        \\\ ///  \\\      ///      ///   ///
 
 Some sort of Forth implementation"""[1:]
 	
 	print("\033[94m%s\033[0m" %msg)
+	
+	i_before = f.i
 	
 	s = ''
 	while s != ".quit":
@@ -70,5 +72,10 @@ Some sort of Forth implementation"""[1:]
 			a = input_("\nAre You sure You want to exit? [Y/n]").lower()
 			if len(a) == 0 or a == "y":
 				sys.exit(0)
+		except farth.FarthError as error:
+			print(error)
+			f.i += f.i - i_before
 		except KeyboardInterrupt:
 			print('')
+		else:
+			i_before = f.i

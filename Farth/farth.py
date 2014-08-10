@@ -11,7 +11,17 @@ Farth - an attempt to implement Forth
 import re
 from inspect import ismethod
 
-VERSION = "0.1.1"
+def replace(index1, index2, s, *args, **kwargs):
+	return s[:index1] + s[index1:index2].replace(*args, **kwargs) + s[index2:]
+
+def highlight_word(index, code, word):
+	return replace(index-1, index+len(word), code, word,
+		"\033[91m"+word+"\033[0m", 1)
+
+def get_current_word(obj):
+	return obj.code[(obj.pos[0], obj.pos[1])]
+
+VERSION = "0.3.0"
 
 DEF_WORD = ":"
 END_DEF_WORD = ";"
@@ -33,8 +43,20 @@ ELSE = "else"
 ENDIF = "endif"
 RM = "."
 CP_FROM_LOOP_STACK = "i"
-RM_FROM_LOOP_STACK = ".l"
+ADD_TO_LOOP_STACK = "la"
 INCLUDE = "include"
+
+class FarthError(Exception):
+	def __init__(self, obj, message):
+		code_fragment = highlight_word(obj.pos[1],
+			obj.code_str.split("\n")[obj.pos[0]-1], get_current_word(obj))
+		msg = "%s at %d:%d:\n%s" %(message, obj.pos[0], obj.pos[1],
+			code_fragment)
+		super(FarthError, self).__init__(msg)
+
+class StackUnderflow(FarthError):
+	def __init__(self, obj):
+		super(StackUnderflow, self).__init__(obj, "Stack underflow")
 
 class Farth(object):
 	"""Main Farth class"""
@@ -43,17 +65,17 @@ class Farth(object):
 		# List of default available words
 		self.words = {DEF_WORD: self.do_pass,
 			END_DEF_WORD: self.do_pass,
-			PLUS: lambda x, y: x+y,
-			MINUS: lambda x, y: x-y, MUL: lambda x, y: x*y,
-			DIV: lambda x, y: float(x)/float(y),
-			MODULO: lambda x, y: x%y, RM: self.remove_from_stack,
+			PLUS: self.do_plus,
+			MINUS: self.do_minus, MUL: self.do_mul,
+			DIV: self.do_div,
+			MODULO: self.do_modulo, RM: self.remove_from_stack,
 			PRINT: self.do_print, DO: self.do_pass,
 			DUP: self.dup, IF: self.do_pass, LOOP: self.do_pass,
 			EQUAL: self.equal, NOT_EQUAL: self.not_equal,
 			LESS_OR_EQUAL: self.less_or_equal,
 			GREATER_OR_EQUAL: self.greater_or_equal,
 			ENDIF: self.do_pass, INCLUDE: self.do_include,
-			RM_FROM_LOOP_STACK: self.do_rm_from_loop_stack,
+			ADD_TO_LOOP_STACK: self.do_add_to_loop_stack,
 			CP_FROM_LOOP_STACK: self.do_cp_from_loop_stack, ELSE: self.do_pass}
 		
 		# Data stack
@@ -75,20 +97,56 @@ class Farth(object):
 		self.code = {}
 		self.code_str = ""
 	
+	def do_plus(self):
+		try:
+			return self.stack.pop()+self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
+	
+	def do_minus(self):
+		try:
+			return self.stack.pop()-self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
+	
+	def do_mul(self):
+		try:
+			return self.stack.pop()*self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
+	
+	def do_div(self):
+		try:
+			return float(self.stack.pop())/self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
+	
+	def do_modulo(self):
+		try:
+			return self.stack.pop()%self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
+	
 	def do_pass(self):
 		"""Do nothing. This function mostly used as a stub."""
 		
 		pass
 	
-	def do_print(self, s):
+	def do_print(self):
 		"""Print last value in stack"""
 		
-		print(s)
+		try:
+			print(self.stack.pop())
+		except IndexError:
+			raise StackUnderflow(self)
 	
 	def dup(self):
 		"""Duplicate last value in stack"""
 		
-		self.stack.append(self.stack[-1])
+		try:
+			self.stack.append(self.stack[-1])
+		except IndexError:
+			raise StackUnderflow(self)
 	
 	def do_cp_from_loop_stack(self):
 		"""Copy value from loop stack"""
@@ -98,35 +156,50 @@ class Farth(object):
 	def equal(self):
 		"""=="""
 		
-		left = self.stack.pop()
-		right = self.stack.pop()
+		try:
+			left = self.stack.pop()
+			right = self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
 		self.stack.append(1 if left == right else 0)
 	
 	def not_equal(self):
 		"""!="""
 		
-		left = self.stack.pop()
-		right = self.stack.pop()
+		try:
+			left = self.stack.pop()
+			right = self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
 		self.stack.append(1 if left != right else 0)
 	
 	def less_or_equal(self):
 		"""<="""
 		
-		left = self.stack.pop()
-		right = self.stack.pop()
+		try:
+			left = self.stack.pop()
+			right = self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
 		self.stack.append(1 if left <= right else 0)
 	
 	def greater_or_equal(self):
 		""">="""
 		
-		left = self.stack.pop()
-		right = self.stack.pop()
+		try:
+			left = self.stack.pop()
+			right = self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
 		self.stack.append(1 if left >= right else 0)
 	
 	def do_include(self, filename):
 		"""Include code from file"""
 		
-		f = open(filename)
+		try:
+			f = open(filename)
+		except IOError:
+			raise FarthError(self, "Failed to open '%s'" %filename)
 		code = f.read()
 		f.close()
 		self.execute_string(code)
@@ -134,12 +207,18 @@ class Farth(object):
 	def remove_from_stack(self):
 		"""Remove last value from stack"""
 		
-		self.stack.pop()
+		try:
+			self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self)
 	
-	def do_rm_from_loop_stack(self):
-		"""Remove first value from the loop stack"""
+	def do_add_to_loop_stack(self):
+		"""Change last value from the loop stack"""
 		
-		self.loop_list[0] = self.stack.pop()
+		try:
+			self.loop_list[self.loop_n-1][0] = self.stack.pop()
+		except IndexError as e:
+			raise StackUnderflow(self)
 	
 	def find_words(self, s):
 		"""Brick string by lines and words"""
@@ -158,7 +237,10 @@ class Farth(object):
 	def def_word(self, def_stack):
 		"""Define new word"""
 		
-		word = def_stack[0]
+		try:
+			word = def_stack[0]
+		except IndexError:
+			raise FarthError(self, "Word definition is empty")
 		word_body = def_stack[1:]
 		new_word = word_body[0]
 		if len(word_body) > 1:
@@ -169,13 +251,14 @@ class Farth(object):
 	
 	def execute_list(self, words):
 		"""Execute Farth code from list like ['1', '2', '3']"""
-		
-		string = words[0]
+
 		if len(words) > 0:
-			for word in words[1:]:
-				string += " " + word
-		
-		self.execute_string(string)
+			string = words[0]
+			if len(words) > 1:
+				for word in words[1:]:
+					string += " " + word
+			
+			self.execute_string(string)
 	
 	def debug(self):
 		"""Prints things like stack length, position and some other things."""
@@ -250,21 +333,23 @@ class Farth(object):
 					self.if_n -= 1
 					self.else_n -= 1
 					
-					if self.stack.pop() == 1:
-						self.execute_list(body)
-					else:
-						if len(else_body) > 0:
-							self.execute_list(else_body)
+					try:
+						if self.stack.pop() == 1:
+							self.execute_list(body)
+						else:
+							if len(else_body) > 0:
+								self.execute_list(else_body)
+					except IndexError:
+						raise StackUnderflow(self)
 			elif self.loop_n > 0 and word == LOOP:
-				if self.loop_list[0] == 1:
-					pos = self.loop_list[1]
+				if self.loop_list[self.loop_n-1][0] == 1:
+					pos = self.loop_list[self.loop_n-1][1]
 					i = keys.index(pos)
 					if not isWord:
 						self.pos = pos
 						self.i = i
 				else:
-					del self.loop_list[1]
-					del self.loop_list[0]
+					del self.loop_list[self.loop_n-1]
 			elif word[0] in '0123456789"':
 				self.stack.append(eval(word))
 			elif word == IF:
@@ -274,11 +359,17 @@ class Farth(object):
 			elif word == DEF_WORD:
 				self.def_n += 1
 			elif word == DO:
-				self.loop_list.append(self.stack.pop())
-				self.loop_list.append(keys[keys.index(pos)+1])
+				try:
+					self.loop_list.append([self.stack.pop()])
+				except IndexError:
+					raise StackUnderflow(self)
+				self.loop_list[self.loop_n].append(keys[keys.index(pos)+1])
 				self.loop_n += 1
 			else:
-				func = self.words[word]
+				try:
+					func = self.words[word]
+				except KeyError:
+					raise FarthError(self, "Unknown word")
 				argcount = func.__code__.co_argcount # Get argument count
 				if ismethod(func):
 					argcount -= 1
