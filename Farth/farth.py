@@ -15,7 +15,7 @@ try:
 except ImportError:
 	from Farth.funcs import Funcs, FarthError, StackUnderflow
 
-VERSION = "0.3.5"
+VERSION = "0.3.6"
 
 DEF_WORD = ":"
 END_DEF_WORD = ";"
@@ -223,7 +223,8 @@ class Farth(object):
 					except IndexError:
 						raise StackUnderflow(self)
 			elif self.loop_n > 0 and word == LOOP:
-				if self.loop_list[self.loop_n-1][0] == 1:
+				if self.loop_list[self.loop_n-1][0] > 1:
+					self.loop_list[self.loop_n-1][0] -= 1
 					pos = self.loop_list[self.loop_n-1][1]
 					i = keys.index(pos)
 					if not isWord:

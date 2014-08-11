@@ -3,7 +3,7 @@
 
 from distutils.core import setup
 
-v = "0.3.5"
+v = "0.3.6"
 
 setup(name="Farth",
 	version=v,
