@@ -69,11 +69,13 @@ The following example defines a new word that prints "true" if condition is true
 ```
 
 ### Loops ###
-Farth ```loop``` are similiar to while loop.
-First, You have to put value on the ```loop stack```:
+Farth ```loop``` is similiar to loop in Forth.
+You have to put value on the ```loop stack``` with ```do```, right after that write some code to be repeated and call ```loop``` word<br/>
+The following example prints digits from 10 to 1:
 ```forth
-1 do "Something" print loop # WARNING: this loop will run forever!
-0 do "nothing" print loop # Will print only once
+10 do i print loop
 ```
+
+```i``` copies current value from loop stack and pushes it to the data stack.<br/>
 
 You can use ```la``` word to put values on loop stack.
