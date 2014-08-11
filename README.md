@@ -1,7 +1,9 @@
 farth
 =====
 
-Forth-like programming language
+[Forth](http://wikipedia.org/wiki/Forth_(programming_language))-like programming language written in Python (which is not recommended for these things as any other scripting language).</br>
+
+You can guess everything about Farth by thinking of its name...
 
 ## Installation ##
 Run ```python setup.py install```<br/>
@@ -34,6 +36,17 @@ Example:
 2 10 / print # Will display 5
 10 % 5 print # Will display 0
 ```
+
+### Comparison ###
+Comparison operators are the same as in typical Forth.<br/>
+```=``` - equal<br/>
+```!=``` - not equal<br/>
+```<=``` - less or equal<br/>
+```>=``` - greater or equal<br/>
+```<``` - less<br/>
+```>``` - greater<br/>
+
+If condition is true it will push ```1``` to the stack or ```0``` if it's false.
 
 ### Custom words ###
 ```:``` word starts word definition and ```;``` ends it.<br/>
@@ -79,3 +92,14 @@ The following example prints digits from 10 to 1:
 ```i``` copies current value from loop stack and pushes it to the data stack.<br/>
 
 You can use ```la``` word to put values on loop stack.
+
+### Includes ###
+You can include Farth code into Your program from files.<br/>
+To do that You can use ```include``` as in following example:
+```forth
+"some_file.forth" include
+```
+
+This will execute code from ```some_file.forth```.
+
+**Note**: include is not the same as import.
