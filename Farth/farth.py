@@ -9,24 +9,13 @@ Farth - an attempt to implement Forth
 """
 
 import re
-from inspect import ismethod
 
 try:
-	from funcs import Funcs
+	from funcs import Funcs, FarthError, StackUnderflow
 except ImportError:
-	from Farth.funcs import Funcs
+	from Farth.funcs import Funcs, FarthError, StackUnderflow
 
-def replace(index1, index2, s, *args, **kwargs):
-	return s[:index1] + s[index1:index2].replace(*args, **kwargs) + s[index2:]
-
-def highlight_word(index, code, word):
-	return replace(index-1, index+len(word), code, word,
-		"\033[91m"+word+"\033[0m", 1)
-
-def get_current_word(obj):
-	return obj.code[(obj.pos[0], obj.pos[1])]
-
-VERSION = "0.3.2"
+VERSION = "0.3.5"
 
 DEF_WORD = ":"
 END_DEF_WORD = ";"
@@ -42,27 +31,26 @@ EQUAL = "="
 NOT_EQUAL = "!="
 LESS_OR_EQUAL = "<="
 GREATER_OR_EQUAL = ">="
+LESS = "<"
+GREATER = ">"
 PRINT = "print"
 IF = "if"
 ELSE = "else"
 ENDIF = "endif"
-RM = "."
+DROP = "drop"
+SWAP = "swap"
+ROT = "rot"
+OVER = "over"
 CP_FROM_LOOP_STACK = "i"
 ADD_TO_LOOP_STACK = "la"
 INCLUDE = "include"
 COMMENT = "#"
-
-class FarthError(Exception):
-	def __init__(self, obj, message):
-		code_fragment = highlight_word(obj.pos[1],
-			obj.code_str.split("\n")[obj.pos[0]-1], get_current_word(obj))
-		msg = "%s at %d:%d:\n%s" %(message, obj.pos[0], obj.pos[1],
-			code_fragment)
-		super(FarthError, self).__init__(msg)
-
-class StackUnderflow(FarthError):
-	def __init__(self, obj):
-		super(StackUnderflow, self).__init__(obj, "Stack underflow")
+PRINT_STACK = ".s"
+FORGET = "forget"
+DDUP = "2" + DUP
+DSWAP = "2" + SWAP
+DDROP = "2" + DROP
+DOVER = "2" + OVER
 
 class Farth(object):
 	"""Main Farth class"""
@@ -75,7 +63,7 @@ class Farth(object):
 			PLUS: Funcs.do_plus,
 			MINUS: Funcs.do_minus, MUL: Funcs.do_mul,
 			DIV: Funcs.do_div,
-			MODULO: Funcs.do_modulo, RM: Funcs.remove_from_stack,
+			MODULO: Funcs.do_modulo, DROP: Funcs.drop,
 			PRINT: Funcs.do_print, DO: Funcs.do_pass,
 			DUP: Funcs.dup, IF: Funcs.do_pass, LOOP: Funcs.do_pass,
 			EQUAL: Funcs.equal, NOT_EQUAL: Funcs.not_equal,
@@ -84,7 +72,13 @@ class Farth(object):
 			ENDIF: Funcs.do_pass, INCLUDE: Funcs.do_include,
 			ADD_TO_LOOP_STACK: Funcs.do_add_to_loop_stack,
 			COMMENT: Funcs.do_pass, ELSE: Funcs.do_pass,
-			CP_FROM_LOOP_STACK: Funcs.do_cp_from_loop_stack}
+			CP_FROM_LOOP_STACK: Funcs.do_cp_from_loop_stack,
+			SWAP: Funcs.do_swap, ROT: Funcs.do_rotate,
+			OVER: Funcs.do_over, PRINT_STACK: Funcs.print_stack,
+			FORGET: Funcs.forget, DDUP: Funcs.do_2dup,
+			DSWAP: Funcs.do_2swap, DDROP: Funcs.do_2drop,
+			DOVER: Funcs.do_2over, LESS: Funcs.less,
+			GREATER: Funcs.greater}
 		
 		# Data stack
 		self.stack = []
@@ -134,7 +128,7 @@ class Farth(object):
 			for w in word_body[1:]:
 				new_word += " "+w
 		
-		self.words[word] = lambda: self.execute_string(new_word, custom_word=True)
+		self.words[word] = lambda obj: obj.execute_string(new_word, custom_word=True)
 	
 	def execute_list(self, words):
 		"""Execute Farth code from list like ['1', '2', '3']"""
@@ -237,7 +231,7 @@ class Farth(object):
 						self.i = i
 				else:
 					del self.loop_list[self.loop_n-1]
-			elif word[0] in '0123456789"':
+			elif word[0] in '0123456789"' and word not in self.words:
 				self.stack.append(eval(word))
 			elif word == IF:
 				self.if_n += 1
