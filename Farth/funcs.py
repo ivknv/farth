@@ -93,7 +93,8 @@ class Funcs(object):
 	def do_cp_from_loop_stack(obj):
 		"""Copy value from loop stack"""
 		
-		obj.stack.append(obj.loop_list[-1][0])
+		if obj.loop_list:
+			obj.stack.append(obj.loop_list[-1][0])
 	
 	@staticmethod
 	def equal(obj):
@@ -177,7 +178,8 @@ class Funcs(object):
 		"""Change last value from the loop stack"""
 		
 		try:
-			obj.loop_list[obj.loop_n-1][0] = obj.stack.pop()
+			if obj.loop_list:
+				obj.loop_list[obj.loop_n-1][0] = obj.stack.pop()
 		except IndexError as e:
 			raise StackUnderflow(obj)
 	

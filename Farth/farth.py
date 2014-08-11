@@ -222,7 +222,7 @@ class Farth(object):
 								self.execute_list(else_body)
 					except IndexError:
 						raise StackUnderflow(self)
-			elif self.loop_n > 0 and word == LOOP:
+			elif self.loop_n > 0 and self.loop_list and word == LOOP:
 				if self.loop_list[self.loop_n-1][0] > 1:
 					self.loop_list[self.loop_n-1][0] -= 1
 					pos = self.loop_list[self.loop_n-1][1]
@@ -232,6 +232,7 @@ class Farth(object):
 						self.i = i
 				else:
 					del self.loop_list[self.loop_n-1]
+					self.loop_n -= 1
 			elif word[0] in '0123456789"' and word not in self.words:
 				self.stack.append(eval(word))
 			elif word == IF:
@@ -248,7 +249,7 @@ class Farth(object):
 				self.loop_list[self.loop_n].append(keys[keys.index(pos)+1])
 				self.loop_n += 1
 			elif word == COMMENT:
-				self.comment = self.pos[0]
+				self.comment = pos[0]
 			else:
 				try:
 					func = self.words[word]
