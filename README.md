@@ -5,6 +5,19 @@ farth
 
 You can guess everything about Farth by thinking of its name...
 
+## Table of contents ##
+1. [Installation](#installation)
+2. [Syntax](#syntax)
+3. [Hello world](#hello-world)
+4. [Comments](#comments)
+5. [Arithmetic operations](#arithmetic-operations)
+6. [Comparison](#comparison)
+7. [Custom words](#custom-words)
+8. [Stack manipulation](#stack-manipulation)
+9. [Branching](#branching)
+10. [Loops](#loops)
+11. [Includes](#includes)
+
 ## Installation ##
 Run ```python setup.py install```<br/>
 After that You will be able to run interpreter by running following command:
