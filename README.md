@@ -34,7 +34,7 @@ Syntax is almost the same as in typical Forth language.
 ```
 
 ### Comments ###
-There's ```#``` for word commenting everything after it on the same line.
+There's ```#``` word for commenting everything after it on the same line.
 Example:
 ```forth
 # This is a comment
