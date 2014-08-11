@@ -3,9 +3,14 @@
 
 from distutils.core import setup
 
+v = "0.3.2"
+
 setup(name="Farth",
-	version="0.3.0",
+	version=v,
 	author="Ivan Konovalov",
 	author_email="rvan.mega@gmail.com",
 	description="Farth - is an attempt to implement Forth",
-	packages=["Farth"])
+	packages=["Farth"],
+	url="https://github.com/SPython/farth",
+	download_url="https://github.com/SPython/farth/tarball/"+v,
+	keywords=["forth", "implementation", "language"])

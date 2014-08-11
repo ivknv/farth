@@ -11,6 +11,11 @@ Farth - an attempt to implement Forth
 import re
 from inspect import ismethod
 
+try:
+	from funcs import Funcs
+except ImportError:
+	from Farth.funcs import Funcs
+
 def replace(index1, index2, s, *args, **kwargs):
 	return s[:index1] + s[index1:index2].replace(*args, **kwargs) + s[index2:]
 
@@ -21,7 +26,7 @@ def highlight_word(index, code, word):
 def get_current_word(obj):
 	return obj.code[(obj.pos[0], obj.pos[1])]
 
-VERSION = "0.3.0"
+VERSION = "0.3.2"
 
 DEF_WORD = ":"
 END_DEF_WORD = ";"
@@ -45,6 +50,7 @@ RM = "."
 CP_FROM_LOOP_STACK = "i"
 ADD_TO_LOOP_STACK = "la"
 INCLUDE = "include"
+COMMENT = "#"
 
 class FarthError(Exception):
 	def __init__(self, obj, message):
@@ -63,20 +69,22 @@ class Farth(object):
 	
 	def __init__(self):
 		# List of default available words
-		self.words = {DEF_WORD: self.do_pass,
-			END_DEF_WORD: self.do_pass,
-			PLUS: self.do_plus,
-			MINUS: self.do_minus, MUL: self.do_mul,
-			DIV: self.do_div,
-			MODULO: self.do_modulo, RM: self.remove_from_stack,
-			PRINT: self.do_print, DO: self.do_pass,
-			DUP: self.dup, IF: self.do_pass, LOOP: self.do_pass,
-			EQUAL: self.equal, NOT_EQUAL: self.not_equal,
-			LESS_OR_EQUAL: self.less_or_equal,
-			GREATER_OR_EQUAL: self.greater_or_equal,
-			ENDIF: self.do_pass, INCLUDE: self.do_include,
-			ADD_TO_LOOP_STACK: self.do_add_to_loop_stack,
-			CP_FROM_LOOP_STACK: self.do_cp_from_loop_stack, ELSE: self.do_pass}
+		# Every function must take Farth object as only argument
+		self.words = {DEF_WORD: Funcs.do_pass,
+			END_DEF_WORD: Funcs.do_pass,
+			PLUS: Funcs.do_plus,
+			MINUS: Funcs.do_minus, MUL: Funcs.do_mul,
+			DIV: Funcs.do_div,
+			MODULO: Funcs.do_modulo, RM: Funcs.remove_from_stack,
+			PRINT: Funcs.do_print, DO: Funcs.do_pass,
+			DUP: Funcs.dup, IF: Funcs.do_pass, LOOP: Funcs.do_pass,
+			EQUAL: Funcs.equal, NOT_EQUAL: Funcs.not_equal,
+			LESS_OR_EQUAL: Funcs.less_or_equal,
+			GREATER_OR_EQUAL: Funcs.greater_or_equal,
+			ENDIF: Funcs.do_pass, INCLUDE: Funcs.do_include,
+			ADD_TO_LOOP_STACK: Funcs.do_add_to_loop_stack,
+			COMMENT: Funcs.do_pass, ELSE: Funcs.do_pass,
+			CP_FROM_LOOP_STACK: Funcs.do_cp_from_loop_stack}
 		
 		# Data stack
 		self.stack = []
@@ -96,130 +104,9 @@ class Farth(object):
 		# Code
 		self.code = {}
 		self.code_str = ""
-	
-	def do_plus(self):
-		try:
-			return self.stack.pop()+self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_minus(self):
-		try:
-			return self.stack.pop()-self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_mul(self):
-		try:
-			return self.stack.pop()*self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_div(self):
-		try:
-			return float(self.stack.pop())/self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_modulo(self):
-		try:
-			return self.stack.pop()%self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_pass(self):
-		"""Do nothing. This function mostly used as a stub."""
+		# Number of last commented line
+		self.comment = None
 		
-		pass
-	
-	def do_print(self):
-		"""Print last value in stack"""
-		
-		try:
-			print(self.stack.pop())
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def dup(self):
-		"""Duplicate last value in stack"""
-		
-		try:
-			self.stack.append(self.stack[-1])
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_cp_from_loop_stack(self):
-		"""Copy value from loop stack"""
-		
-		self.stack.append(self.loop_list[-1][0])
-	
-	def equal(self):
-		"""=="""
-		
-		try:
-			left = self.stack.pop()
-			right = self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-		self.stack.append(1 if left == right else 0)
-	
-	def not_equal(self):
-		"""!="""
-		
-		try:
-			left = self.stack.pop()
-			right = self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-		self.stack.append(1 if left != right else 0)
-	
-	def less_or_equal(self):
-		"""<="""
-		
-		try:
-			left = self.stack.pop()
-			right = self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-		self.stack.append(1 if left <= right else 0)
-	
-	def greater_or_equal(self):
-		""">="""
-		
-		try:
-			left = self.stack.pop()
-			right = self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-		self.stack.append(1 if left >= right else 0)
-	
-	def do_include(self, filename):
-		"""Include code from file"""
-		
-		try:
-			f = open(filename)
-		except IOError:
-			raise FarthError(self, "Failed to open '%s'" %filename)
-		code = f.read()
-		f.close()
-		self.execute_string(code)
-	
-	def remove_from_stack(self):
-		"""Remove last value from stack"""
-		
-		try:
-			self.stack.pop()
-		except IndexError:
-			raise StackUnderflow(self)
-	
-	def do_add_to_loop_stack(self):
-		"""Change last value from the loop stack"""
-		
-		try:
-			self.loop_list[self.loop_n-1][0] = self.stack.pop()
-		except IndexError as e:
-			raise StackUnderflow(self)
-	
 	def find_words(self, s):
 		"""Brick string by lines and words"""
 		
@@ -297,7 +184,7 @@ class Farth(object):
 				self.pos = pos
 				self.i = i
 			
-			if len(word) == 0: # If word is empty
+			if self.pos[0] == self.comment or len(word) == 0:
 				continue
 			elif self.def_n > 0:
 				if word != END_DEF_WORD or self.def_n > 1:
@@ -365,20 +252,15 @@ class Farth(object):
 					raise StackUnderflow(self)
 				self.loop_list[self.loop_n].append(keys[keys.index(pos)+1])
 				self.loop_n += 1
+			elif word == COMMENT:
+				self.comment = self.pos[0]
 			else:
 				try:
 					func = self.words[word]
 				except KeyError:
 					raise FarthError(self, "Unknown word")
-				argcount = func.__code__.co_argcount # Get argument count
-				if ismethod(func):
-					argcount -= 1
 				
-				if argcount > 0:
-					res = func(*self.stack[-argcount:])
-					self.stack = self.stack[0:-argcount]
-				else:
-					res = func()
+				res = func(self)
 				if res is not None:
 					self.stack.append(res)
 	
