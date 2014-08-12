@@ -15,7 +15,7 @@ try:
 except ImportError:
 	from Farth.funcs import Funcs, FarthError, StackUnderflow
 
-VERSION = "0.3.6"
+VERSION = "0.4.2"
 
 DEF_WORD = ":"
 END_DEF_WORD = ";"
