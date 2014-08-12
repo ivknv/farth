@@ -17,6 +17,7 @@ You can guess everything about Farth by thinking of its name...
 9. [Branching](#branching)
 10. [Loops](#loops)
 11. [Includes](#includes)
+12. [String manipulation](#string-manipulation)
 
 ## Installation ##
 Run ```python setup.py install```<br/>
@@ -83,6 +84,7 @@ For example, You can define word that defines another word.
 ```2drop``` - (d -- ) removes last pair of values<br/>
 ```2swap``` - (d1 d2 -- d2 d1) swaps 2 last pairs of values<br/>
 ```2over``` - (d1 d2 -- d1 d2 d1) duplicates previous pair of values<br/>
+```reverse``` - (n1 n2 ... -- ... n2 n1) reverses stack<br/>
 ```.s``` - print current stack contents
 
 ### Branching ###
@@ -116,3 +118,12 @@ To do that You can use ```include``` as in following example:
 This will execute code from ```some_file.forth```.
 
 **Note**: include is not the same as import.
+
+### String manipulation ###
+```lower``` - ("SOME STRING" -- "some string") converts string to lowercase<br/>
+```upper``` - ("some string" -- "SOME STRING") converts string to uppercase<br/>
+```tostr``` - (n -- "n") converts number to string<br/>
+```strlen``` - pushes length of string on the stack<br/>
+```stri``` - (string index -- string[index]) takes string and index as arguments, pushes to stack ```string[index]```<br/>
+```slice``` - (string index1 index2 -- string[index1:index2]) slices string<br/>
+```strrs``` - ("123" -- "321") reverses string
