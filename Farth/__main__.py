@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from Farth import farth
-import readline
+try:
+	import readline
+except ImportError:
+	import pyreadline as readline
 import os
 import atexit
 import sys
@@ -117,6 +120,17 @@ def _get_terminal_size_linux():
 			return None
 	return int(cr[1]), int(cr[0])
 
+def colorize(text, color):
+	return "\033[%s%s\033[0m" %(color, text)
+
+def prompt():
+	if platform.system() == "Windows":
+		return input_("Farth %s> " %farth.VERSION)
+	else:
+		msg = colorize("Farth ", "94m") + colorize(farth.VERSION, "92m") + \
+			colorize("> ", "94m")
+		return input_(msg)
+
 if __name__ == "__main__":
 	f = farth.Farth()
 	arg_parser = argparse.ArgumentParser(
@@ -153,14 +167,17 @@ Some sort of Forth implementation"""[1:]
 	w = get_terminal_size()[0]
 	
 	if w >= 60:
-		print("\033[94m%s\033[0m" %msg)
+		if platform.system() != "Windows":
+			print(colorize(msg, "94m"))
+		else:
+			print(msg)
 	
 	i_before = f.i
 	
 	while True:
 		try:
 			readline.set_completer(Completer(f.words).complete)
-			s = input_("\033[94mFarth \033[92m%s\033[94m>\033[0m " %farth.VERSION)
+			s = prompt()
 			if s:
 				f.execute_string(s)
 			elif s == ".quit":
