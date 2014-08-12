@@ -10,6 +10,7 @@ import shlex
 import struct
 import subprocess
 import platform
+import argparse
 
 try:
 	input_ = raw_input
@@ -118,6 +119,22 @@ def _get_terminal_size_linux():
 
 if __name__ == "__main__":
 	f = farth.Farth()
+	arg_parser = argparse.ArgumentParser(
+		description="Some sort of Forth implementation")
+	arg_parser.add_argument("filename", nargs="*", help="File to be executed")
+	args = arg_parser.parse_args()
+	
+	if args.filename:
+		try:
+			f_ = open(args.filename[0], "r")
+			code = f_.read()
+			f_.close()
+		except IOError:
+			print("File '%s' doesn't exist" %args.filename[0])
+			sys.exit(1)
+		
+		f.execute_string(code)
+		sys.exit(0)
 	
 	if os.path.exists(histpath):
 		readline.read_history_file(histpath)
