@@ -51,6 +51,15 @@ DDUP = "2" + DUP
 DSWAP = "2" + SWAP
 DDROP = "2" + DROP
 DOVER = "2" + OVER
+REVERSE = "rs"
+LOWER = "lower"
+UPPER = "upper"
+TOSTR = "tostr"
+STR_INDEX = "stri"
+STR_SLICE = "slice"
+STR_LEN = "strlen"
+SIZEOF = "sizeof"
+STR_REVERSE = "strrs"
 
 class Farth(object):
 	"""Main Farth class"""
@@ -78,7 +87,11 @@ class Farth(object):
 			FORGET: Funcs.forget, DDUP: Funcs.do_2dup,
 			DSWAP: Funcs.do_2swap, DDROP: Funcs.do_2drop,
 			DOVER: Funcs.do_2over, LESS: Funcs.less,
-			GREATER: Funcs.greater}
+			GREATER: Funcs.greater, REVERSE: Funcs.reverse_stack,
+			LOWER: Funcs.lower, UPPER: Funcs.upper, TOSTR: Funcs.to_str,
+			STR_INDEX: Funcs.str_index, STR_SLICE: Funcs.str_slice,
+			STR_LEN: Funcs.str_len, SIZEOF: Funcs.sizeof,
+			STR_REVERSE: Funcs.str_reverse}
 		
 		# Data stack
 		self.stack = []

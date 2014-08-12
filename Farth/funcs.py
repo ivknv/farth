@@ -8,6 +8,8 @@
 Contains functions for Farth
 """
 
+from sys import getsizeof
+
 def replace(index1, index2, s, *args, **kwargs):
 	return s[:index1] + s[index1:index2].replace(*args, **kwargs) + s[index2:]
 
@@ -275,5 +277,98 @@ class Funcs(object):
 		try:
 			d = [obj.stack[-4], obj.stack[-3]]
 			obj.stack += d
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def reverse_stack(obj):
+		"""Reverses stack
+		n1 n2 ... -- ... n2 n1"""
+		
+		obj.stack.reverse()
+	
+	@staticmethod
+	def lower(obj):
+		try:
+			if type(obj.stack[-1]) is str:
+				obj.stack[-1] = obj.stack[-1].lower()
+			else:
+				raise FarthError(obj, "Attempt to use 'lower' on non-string")
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def upper(obj):
+		try:
+			if type(obj.stack[-1]) is str:
+				obj.stack[-1] = obj.stack[-1].upper()
+			else:
+				raise FarthError(obj, "Attempt to use 'upper' on non-string")
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def to_str(obj):
+		try:
+			obj.stack[-1] = str(obj.stack[-1])
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def str_index(obj):
+		try:
+			index = obj.stack.pop()
+			if type(index) is not int and type(index) is not float:
+				raise FarthError(obj, "Index must be a number")
+			s = obj.stack.pop()
+			if type(s) is not str:
+				raise FarthError(obj, "Attempt to use 'stri' on non-string")
+			if len(s)-1 < int(index):
+				raise FarthError(obj, "String is too short")
+			obj.stack.append(s[int(index)])
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def str_slice(obj):
+		try:
+			index2 = obj.stack.pop()
+			index1 = obj.stack.pop()
+			if type(index1) is not int and type(index1) is not float and \
+				type(index2) is not int and type(index2) is not float:
+				raise FarthError(obj, "Index must be a number")
+			s = obj.stack.pop()
+			if type(s) is not str:
+				raise FarthError(obj, "Attempt to use 'slice' on non-string")
+			if len(s)-1 < int(index1):
+				raise FarthError(obj, "String is too short")
+			obj.stack.append(s[int(index1):int(index2)])
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def str_len(obj):
+		try:
+			s = obj.stack.pop()
+			if type(s) is not str:
+				raise FarthError(obj, "%s is not a string" %s)
+			obj.stack.append(len(s))
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def str_reverse(obj):
+		try:
+			s = obj.stack.pop()
+			if type(s) is not str:
+				raise FarthError(obj, "Attempt to use 'strrs' on non-string")
+			obj.stack.append(s[::-1])
+		except IndexError:
+			raise StackUnderflow(obj)
+	
+	@staticmethod
+	def sizeof(obj):
+		try:
+			obj.stack.append(getsizeof(obj.stack.pop()))
 		except IndexError:
 			raise StackUnderflow(obj)
