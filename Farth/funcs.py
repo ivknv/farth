@@ -23,7 +23,9 @@ def get_current_word(obj):
 class FarthError(Exception):
 	def __init__(self, obj, message):
 		code_fragment = highlight_word(obj.pos[1],
-			obj.code_str.split("\n")[obj.pos[0]-1], get_current_word(obj))
+			obj.code_str.split("\n")[obj.pos[0]-1],
+			get_current_word(obj))
+		
 		msg = "%s at %d:%d:\n%s" %(message, obj.pos[0], obj.pos[1],
 			code_fragment)
 		super(FarthError, self).__init__(msg)
@@ -34,341 +36,272 @@ class StackUnderflow(FarthError):
 
 class Funcs(object):
 	@staticmethod
-	def do_plus(obj):
-		try:
-			return obj.stack.pop()+obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_plus(vm):
+		vm.program.append(["ADD"])
 	
 	@staticmethod
-	def do_minus(obj):
-		try:
-			return obj.stack.pop()-obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-	@staticmethod
-	def do_mul(obj):
-		try:
-			return obj.stack.pop()*obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_minus(vm):
+		vm.program.append(["SUB"])
 	
 	@staticmethod
-	def do_div(obj):
-		try:
-			return float(obj.stack.pop())/obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_mul(vm):
+		vm.program.append(["MUL"])
 	
 	@staticmethod
-	def do_modulo(obj):
-		try:
-			return obj.stack.pop()%obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_div(vm):
+		vm.program.append(["DIV"])
 	
 	@staticmethod
-	def do_pass(obj):
+	def do_modulo(vm):
+		vm.program.append(["MOD"])
+	
+	@staticmethod
+	def do_pass(vm):
 		"""Do nothing. This function mostly used as a stub."""
 		
-		pass
+		vm.program.append(["NOP"])
 	
 	@staticmethod
-	def do_print(obj):
+	def do_print(vm):
 		"""Print last value in stack"""
 		
-		try:
-			print(obj.stack.pop())
-		except IndexError:
-			raise StackUnderflow(obj)
+		vm.program.append(["PRINT"])
 	
 	@staticmethod
-	def dup(obj):
+	def dup(vm):
 		"""Duplicate last value in stack"""
 		
-		try:
-			obj.stack.append(obj.stack[-1])
-		except IndexError:
-			raise StackUnderflow(obj)
+		vm.program.append(["DUP"])
 	
 	@staticmethod
-	def do_cp_from_loop_stack(obj):
+	def do_cp_from_loop_stack(vm):
 		"""Copy value from loop stack"""
 		
-		if obj.loop_list:
-			obj.stack.append(obj.loop_list[-1][0])
+		vm.program.append(["CPFLS"])
 	
 	@staticmethod
-	def equal(obj):
+	def equal(vm):
 		"""=="""
 		
-		try:
-			left = obj.stack.pop()
-			right = obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-		obj.stack.append(1 if left == right else 0)
+		vm.program.append(["EQ"])
 	
 	@staticmethod
-	def not_equal(obj):
+	def not_equal(vm):
 		"""!="""
 		
-		try:
-			left = obj.stack.pop()
-			right = obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-		obj.stack.append(1 if left != right else 0)
+		vm.append(["NEQ"])
 	
 	@staticmethod
-	def less_or_equal(obj):
+	def less_or_equal(vm):
 		"""<="""
 		
-		try:
-			left = obj.stack.pop()
-			right = obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-		obj.stack.append(1 if left <= right else 0)
+		vm.append(["LEQ"])
 	
 	@staticmethod
-	def greater_or_equal(obj):
+	def greater_or_equal(vm):
 		""">="""
 		
-		try:
-			left = obj.stack.pop()
-			right = obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-		obj.stack.append(1 if left >= right else 0)
-	
+		vm.program.append(["GEQ"])
+			
 	@staticmethod
-	def greater(obj):
+	def greater(vm):
 		""">"""
 		
-		obj.stack.append(1 if obj.stack.pop() > obj.stack.pop() else 0)
-	
+		vm.program.append(["GT"])
+				
 	@staticmethod
-	def less(obj):
+	def less(vm):
 		""">"""
 		
-		obj.stack.append(1 if obj.stack.pop() < obj.stack.pop() else 0)
-	
+		vm.program.append(["LT"])
+		
 	@staticmethod
-	def do_include(obj, filename):
+	def do_include(vm, filename):
 		"""Include code from file"""
 		
 		try:
 			f = open(filename)
 		except IOError:
-			raise FarthError(obj, "Failed to open '%s'" %filename)
+			raise FarthError(vm, "Failed to open '%s'" %filename)
 		code = f.read()
 		f.close()
-		obj.execute_string(code)
-		
-	@staticmethod
-	def drop(obj):
-		"""Remove last value from stack"""
-		
-		try:
-			obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-		
-	@staticmethod
-	def do_add_to_loop_stack(obj):
-		"""Change last value from the loop stack"""
-		
-		try:
-			if obj.loop_list:
-				obj.loop_list[obj.loop_n-1][0] = obj.stack.pop()
-		except IndexError as e:
-			raise StackUnderflow(obj)
+		vm.farth.compile_and_execute(code)
 	
 	@staticmethod
-	def do_swap(obj):
+	def dis(vm):
+		vm.program.append(["DIS"])
+		
+	@staticmethod
+	def drop(vm):
+		"""Remove last value from stack"""
+		
+		vm.program.append(["POP"])
+		
+	@staticmethod
+	def do_add_to_loop_stack(vm):
+		"""Change last value from the loop stack"""
+		
+		vm.program.append(["ADDTOLS"])
+	
+	@staticmethod
+	def do_swap(vm):
 		"""Swap 2 top values on the stack
 		n1 n2 -- n2 n1"""
 		
-		try:
-			obj.stack[-1], obj.stack[-2] = obj.stack[-2], obj.stack[-1]
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["SWAP"])
+		
 	@staticmethod
-	def do_rotate(obj):
+	def do_rotate(vm):
 		"""'Rotates' last 3 values
 		n1 n2 n3 -- n2 n3 n1"""
 		
-		try:
-			n1, n2, n3 = obj.stack[-1], obj.stack[-2], obj.stack[-3]
-			obj.stack[-1], obj.stack[-2], obj.stack[-3] = n2, n3, n1
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["ROT"])
+		
 	@staticmethod
-	def do_over(obj):
+	def do_over(vm):
 		"""Duplicates first item and puts it on top of the stack
 		n1 n2 -- n1 n2 n1"""
 		
-		try:
-			obj.stack.append(obj.stack[-2])
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["OVER"])
+		
 	@staticmethod
-	def print_stack(obj):
+	def print_stack(vm):
 		"""Prints stack content"""
 		
-		print(obj.stack)
+		vm.program.append(["PRINTSTACK"])
 	
 	@staticmethod
-	def forget(obj):
+	def forget(vm):
 		"""Remove word from dictionary"""
 		
-		try:
-			word = obj.stack.pop()
-			obj.words.pop(word)
-		except IndexError:
-			raise StackUnderflow(obj)
-		except KeyError:
-			raise FarthError(obj, "word '%s' doesn't exist" %word)
+		vm.program.append(["FORGET"])
 	
 	@staticmethod
-	def do_2dup(obj):
+	def do_2dup(vm):
 		"""Duplicates last pair of values
 		d -- d d"""
 		
-		try:
-			d = [obj.stack[-2], obj.stack[-1]]
-			obj.stack += d
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["2DUP"])
+		
 	@staticmethod
-	def do_2swap(obj):
+	def do_2swap(vm):
 		"""Swaps 2 last pairs of values
 		d1 d2 -- d2 d1"""
 		
-		try:
-			n1, n2 = obj.stack[-1], obj.stack[-2]
-			n3, n4 = obj.stack[-3], obj.stack[-4]
-			obj.stack[-1], obj.stack[-2], \
-			obj.stack[-3], obj.stack[-4] = n3, n4, n1, n2
-		except IndexError:
-			raise StackUnderflow(obj)
+		vm.program.append(["2SWAP"])
 	
 	@staticmethod
-	def do_2drop(obj):
+	def do_2drop(vm):
 		"""Removes last pair from stack
 		d --"""
 		
-		try:
-			obj.stack.pop()
-			obj.stack.pop()
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["2DROP"])
+		
 	@staticmethod
-	def do_2over(obj):
+	def do_2over(vm):
 		"""Duplicates first pair and puts it on stack
 		d1 d2 -- d1 d2 d1"""
 		
-		try:
-			d = [obj.stack[-4], obj.stack[-3]]
-			obj.stack += d
-		except IndexError:
-			raise StackUnderflow(obj)
-	
+		vm.program.append(["2OVER"])
+		
 	@staticmethod
-	def reverse_stack(obj):
+	def reverse_stack(vm):
 		"""Reverses stack
 		n1 n2 ... -- ... n2 n1"""
 		
-		obj.stack.reverse()
+		vm.program.append(["REVSTACK"])
 	
 	@staticmethod
-	def lower(obj):
-		try:
-			if type(obj.stack[-1]) is str:
-				obj.stack[-1] = obj.stack[-1].lower()
-			else:
-				raise FarthError(obj, "Attempt to use 'lower' on non-string")
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_quit(vm):
+		"""Stop execution"""
+		
+		vm.program.append(["HALT"])
 	
 	@staticmethod
-	def upper(obj):
-		try:
-			if type(obj.stack[-1]) is str:
-				obj.stack[-1] = obj.stack[-1].upper()
-			else:
-				raise FarthError(obj, "Attempt to use 'upper' on non-string")
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_def(vm):
+		"""Start word definition"""
+		
+		vm.program.append(["DEFNINC"])
+		vm.farth.def_just_started = True
+	
+	def do_enddef(vm):
+		"""End word definition"""
+		
+		vm.program.append(["ENDDEF"])
 	
 	@staticmethod
-	def to_str(obj):
-		try:
-			obj.stack[-1] = str(obj.stack[-1])
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_else(vm):
+		"""Define what to do if condition is false"""
+		
+		vm.program.append(["ELSENSET"])
 	
 	@staticmethod
-	def str_index(obj):
-		try:
-			index = obj.stack.pop()
-			if type(index) is not int and type(index) is not float:
-				raise FarthError(obj, "Index must be a number")
-			s = obj.stack.pop()
-			if type(s) is not str:
-				raise FarthError(obj, "Attempt to use 'stri' on non-string")
-			if len(s)-1 < int(index):
-				raise FarthError(obj, "String is too short")
-			obj.stack.append(s[int(index)])
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_if(vm):
+		"""Start if statement"""
+		
+		vm.program.append(["IFNINC"])
 	
 	@staticmethod
-	def str_slice(obj):
-		try:
-			index2 = obj.stack.pop()
-			index1 = obj.stack.pop()
-			if type(index1) is not int and type(index1) is not float and \
-				type(index2) is not int and type(index2) is not float:
-				raise FarthError(obj, "Index must be a number")
-			s = obj.stack.pop()
-			if type(s) is not str:
-				raise FarthError(obj, "Attempt to use 'slice' on non-string")
-			if len(s)-1 < int(index1):
-				raise FarthError(obj, "String is too short")
-			obj.stack.append(s[int(index1):int(index2)])
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_endif(vm):
+		"""End if statement"""
+		
+		vm.program.append(["CHECKIF"])
+	
+	def do_do(vm):
+		"""Push value to loop stack"""
+		
+		vm.program.append(["LOOPPUSH"])
 	
 	@staticmethod
-	def str_len(obj):
-		try:
-			s = obj.stack.pop()
-			if type(s) is not str:
-				raise FarthError(obj, "%s is not a string" %s)
-			obj.stack.append(len(s))
-		except IndexError:
-			raise StackUnderflow(obj)
+	def do_loop(vm):
+		"""Start loop"""
+		
+		vm.program.append(["LOOP"])
 	
 	@staticmethod
-	def str_reverse(obj):
-		try:
-			s = obj.stack.pop()
-			if type(s) is not str:
-				raise FarthError(obj, "Attempt to use 'strrs' on non-string")
-			obj.stack.append(s[::-1])
-		except IndexError:
-			raise StackUnderflow(obj)
+	def lower(vm):
+		"""Convert string to lowercase"""
+		
+		vm.program.append(["LOWER"])
 	
 	@staticmethod
-	def sizeof(obj):
-		try:
-			obj.stack.append(getsizeof(obj.stack.pop()))
-		except IndexError:
-			raise StackUnderflow(obj)
+	def upper(vm):
+		"""Convert string to uppercase"""
+		
+		vm.program.append(["UPPER"])
+	
+	@staticmethod
+	def to_str(vm):
+		"""Convert number to string"""
+		
+		vm.program.append(["TOSTR"])
+	
+	@staticmethod
+	def str_index(vm):
+		"""str[index]"""
+		
+		vm.program.append(["STRI"])
+	
+	@staticmethod
+	def str_slice(vm):
+		"""Slices string"""
+		
+		vm.program.append(["SLICE"])
+	
+	@staticmethod
+	def str_len(vm):
+		"""Get string length"""
+		
+		vm.program.append(["STRLEN"])
+	
+	@staticmethod
+	def str_reverse(vm):
+		"""Reverse string"""
+		
+		vm.program.append(["STRREV"])
+	
+	@staticmethod
+	def sizeof(vm):
+		"""Get size of value"""
+		
+		vm.program.append(["SIZEOF"])

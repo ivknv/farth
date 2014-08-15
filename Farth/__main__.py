@@ -172,24 +172,19 @@ Some sort of Forth implementation"""[1:]
 		else:
 			print(msg)
 	
-	i_before = f.i
-	
 	while True:
 		try:
 			readline.set_completer(Completer(f.words).complete)
 			s = prompt()
 			if s:
-				f.execute_string(s)
-			elif s == ".quit":
-				sys.exit(0)
+				f.compile_and_execute(s)
+			if f.vm.pc is None:
+				raise EOFError
 		except EOFError:
 			a = input_("\nAre You sure You want to exit? [Y/n]").lower()
 			if len(a) == 0 or a == "y":
 				sys.exit(0)
 		except farth.FarthError as error:
 			print(error)
-			f.i += f.i - i_before - 1
 		except KeyboardInterrupt:
 			print('')
-		else:
-			i_before = f.i
