@@ -137,6 +137,44 @@ def dump_vmcode(farth_obj, filename):
 	f.write(s)
 	f.close()
 
+def invert_dict(d):
+	newd = {}
+	for i in d:
+		newd[d[i]] = i
+	
+	return newd
+
+import re
+
+def encode(code, bytes_):
+	newcode = ''
+	
+	for i in code.split("\n"):
+		j = re.findall(r'(".*?"|[^ ]+)', i)
+		args = "\x98" + "\x98".join(map(str, j[1:])) if len(j) > 1 else ''
+		newcode += bytes_[j[0].lower()] + args
+		newcode += "\x99"
+	
+	return newcode[0:-1]
+
+def decode(code, bytes_):
+	newcode = ''
+	
+	for i in code.split("\x99"):
+		j = re.findall(r'(".*?"|[^\x98]+)', i)
+		args = " " + " ".join(map(str, j[1:])) if len(j) > 1 else ''
+		newcode += bytes_[j[0]] + args
+		newcode += "\n"
+	
+	return newcode[0:-1]
+
+def compile_to_bytecode(code, bytes_, filename):
+	bytecode = encode(code, bytes_)
+	f = open(filename, "wb")
+	f.write(b'FARTHBIN\n')
+	f.write(bytes(bytecode, "utf8"))
+	f.close()
+
 if __name__ == "__main__":
 	f = farth.Farth()
 	arg_parser = argparse.ArgumentParser(
@@ -144,6 +182,8 @@ if __name__ == "__main__":
 	arg_parser.add_argument("filename", nargs="*", help="File to be executed")
 	arg_parser.add_argument("-d", "--dump", action="store_true",
 		help="Dump VM code into file")
+	arg_parser.add_argument("-b", "--bytecode", action="store_true",
+		help="Translate code to VM bytecode")
 	arg_parser.add_argument("-o", "--output", nargs=1, help="Output file")
 	args = arg_parser.parse_args()
 	
@@ -159,8 +199,17 @@ if __name__ == "__main__":
 		if args.dump and args.output:
 			f.compile_string(code)
 			dump_vmcode(f, args.output[0])
+		elif args.bytecode and args.output:
+			f.compile_string(code)
+			compile_to_bytecode(f.vm.gen_string(), invert_dict(f.vm.bytes),
+				args.output[0])
 		else:
-			f.compile_and_execute(code)
+			if code.startswith("FARTHBIN\n"):
+				code = decode(code[9:], f.vm.bytes)
+				f.vm = farth.FarthVM(code, f)
+				f.vm.execute()
+			else:
+				f.compile_and_execute(code)
 		sys.exit(0)
 	
 	if os.path.exists(histpath):

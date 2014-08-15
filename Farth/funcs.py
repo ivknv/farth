@@ -8,8 +8,6 @@
 Contains functions for Farth
 """
 
-from sys import getsizeof
-
 def replace(index1, index2, s, *args, **kwargs):
 	return s[:index1] + s[index1:index2].replace(*args, **kwargs) + s[index2:]
 

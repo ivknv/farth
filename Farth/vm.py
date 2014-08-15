@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from Farth.funcs import StackUnderflow, FarthError
+from sys import getsizeof
 
 class FarthVM(object):
 	def __init__(self, program, farth):
@@ -22,7 +23,37 @@ class FarthVM(object):
 		self.loop_list = []
 		self.loop_n = 0
 		
-		self.farth = farth		
+		self.farth = farth
+		
+		self.bytes = {"\x01": "eword", "\x02": "push",
+			"\x03": "pop", "\x04": "add",
+			"\x05": "sub", "\x06": "mul",
+			"\x07": "div", "\x08": "mod",
+			"\x09": "nop", "\x10": "include",
+			"\x11": "lt", "\x12": "gt",
+			"\x13": "eq", "\x14": "neq",
+			"\x15": "lteq", "\x16": "gteq",
+			"\x17": "dup", "\x18": "swap",
+			"\x19": "rot", "\x20": "over",
+			"\x21": "2dup", "\x22": "2swap",
+			"\x23": "2drop", "\x24": "2rot",
+			"\x25": "2over", "\x26": "ifninc",
+			"\x27": "ifndec", "\x28": "elsenset",
+			"\x29": "elsenz", "\x30": "checkif",
+			"\x31": "iflistadd", "\x32": "elselistadd",
+			"\x33": "clearif", "\x34": "defninc",
+			"\x35": "defndec", "\x36": "defpush",
+			"\x37": "enddef", "\x38": "cleardef",
+			"\x39": "loopndec", "\x40": "loopninc",
+			"\x41": "looppush", "\x42": "addtols",
+			"\x43": "loop", "\x44": "cpfls",
+			"\x45": "revstack", "\x46": "printstack",
+			"\x47": "print", "\x48": "stri",
+			"\x49": "slice", "\x50": "strlen",
+			"\x51": "strrev", "\x52": "sizeof",
+			"\x53": "tostr", "\x54": "upper",
+			"\x55": "lower", "\x56": "forget",
+			"\x57": "dis", "\x58": "halt"}
 	
 	def def_word(self, def_stack):
 		"""Define new word"""
@@ -245,6 +276,15 @@ class FarthVM(object):
 		except IndexError:
 			raise StackUnderflow(self.farth)
 	
+	def i_2drop(self):
+		"""Remove last pair of items"""
+		
+		try:
+			self.stack.pop()
+			self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self.farth)
+	
 	def i_2over(self):
 		"""Add previous pair of values to the stack"""
 		
@@ -422,7 +462,7 @@ class FarthVM(object):
 		"""Print value from the stack"""
 		
 		try:
-			print(self.stack.pop())
+			print(eval(self.stack.pop()))
 		except IndexError:
 			raise StackUnderflow(self.farth)
 	
