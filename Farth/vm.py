@@ -3,11 +3,13 @@
 
 from Farth.funcs import StackUnderflow, FarthError
 from sys import getsizeof
+import re
 
 class FarthVM(object):
 	def __init__(self, program, farth):
 		if program:
-			self.program = [line.split(" ") for line in program.split("\n")]
+			self.program = [re.findall(r'(\'".*?"\'|[^ ]+)', line)
+				 for line in program.split("\n")]
 		else:
 			self.program = []
 		self.pc = 0

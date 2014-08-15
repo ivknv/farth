@@ -150,7 +150,7 @@ def encode(code, bytes_):
 	newcode = ''
 	
 	for i in code.split("\n"):
-		j = re.findall(r'(".*?"|[^ ]+)', i)
+		j = re.findall(r'(\'".*?"\'|[^ ]+)', i)
 		args = "\x98" + "\x98".join(map(str, j[1:])) if len(j) > 1 else ''
 		newcode += bytes_[j[0].lower()] + args
 		newcode += "\x99"
@@ -161,7 +161,7 @@ def decode(code, bytes_):
 	newcode = ''
 	
 	for i in code.split("\x99"):
-		j = re.findall(r'(".*?"|[^\x98]+)', i)
+		j = re.findall(r'(\'".*?"\'|[^\x98]+)', i)
 		args = " " + " ".join(map(str, j[1:])) if len(j) > 1 else ''
 		newcode += bytes_[j[0]] + args
 		newcode += "\n"
