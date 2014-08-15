@@ -1,7 +1,7 @@
 farth
 =====
 
-[Forth](http://wikipedia.org/wiki/Forth_(programming_language))-like programming language written in Python (which is not recommended for these things as any other scripting language).</br>
+[Forth](http://wikipedia.org/wiki/Forth_(programming_language))-like **compilable** programming language written in Python (which is not recommended for these things as any other scripting language).</br>
 
 You can guess everything about Farth by thinking of its name...
 
@@ -18,6 +18,7 @@ You can guess everything about Farth by thinking of its name...
 10. [Loops](#loops)
 11. [Includes](#includes)
 12. [String manipulation](#string-manipulation)
+13. [How to compile code](#how-to-compile-code)
 
 ## Installation ##
 Run ```python setup.py install```<br/>
@@ -127,3 +128,21 @@ This will execute code from ```some_file.forth```.
 ```stri``` - (string index -- string[index]) takes string and index as arguments, pushes to stack ```string[index]```<br/>
 ```slice``` - (string index1 index2 -- string[index1:index2]) slices string<br/>
 ```strrs``` - ("123" -- "321") reverses string
+
+## How to compile code ##
+Let's say You have file called ```hello.farth``` that contains this code:
+```forth
+"Hello, world!" print
+```
+To compile it, run the following command:
+```bash
+python -m Farth hello.farth -b -o hello
+```
+Where ```hello``` is an output filename.<br/>
+After running this command You will find another file (```hello``` in this case).
+You can run that file with following command:
+```bash
+python -m Farth hello
+```
+You should see ```Hello, world!``` after that.<br/>
+Also, You can dump FarthVM code into file with ```-d``` or ```--dump``` options.

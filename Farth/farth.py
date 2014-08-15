@@ -14,7 +14,7 @@ from Farth.funcs import Funcs, FarthError
 
 from Farth.vm import FarthVM
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 DEF_WORD = ":"
 END_DEF_WORD = ";"
 PLUS = "+"
