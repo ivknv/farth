@@ -131,11 +131,20 @@ def prompt():
 			colorize("> ", "94m")
 		return input_(msg)
 
+def dump_vmcode(farth_obj, filename):
+	s = farth_obj.vm.gen_string()
+	f = open(filename, "w")
+	f.write(s)
+	f.close()
+
 if __name__ == "__main__":
 	f = farth.Farth()
 	arg_parser = argparse.ArgumentParser(
 		description="Some sort of Forth implementation")
 	arg_parser.add_argument("filename", nargs="*", help="File to be executed")
+	arg_parser.add_argument("-d", "--dump", action="store_true",
+		help="Dump VM code into file")
+	arg_parser.add_argument("-o", "--output", nargs=1, help="Output file")
 	args = arg_parser.parse_args()
 	
 	if args.filename:
@@ -147,7 +156,11 @@ if __name__ == "__main__":
 			print("File '%s' doesn't exist" %args.filename[0])
 			sys.exit(1)
 		
-		f.execute_string(code)
+		if args.dump and args.output:
+			f.compile_string(code)
+			dump_vmcode(f, args.output[0])
+		else:
+			f.compile_and_execute(code)
 		sys.exit(0)
 	
 	if os.path.exists(histpath):
