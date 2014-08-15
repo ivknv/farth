@@ -116,16 +116,10 @@ class Funcs(object):
 		vm.program.append(["LT"])
 		
 	@staticmethod
-	def do_include(vm, filename):
+	def do_include(vm):
 		"""Include code from file"""
 		
-		try:
-			f = open(filename)
-		except IOError:
-			raise FarthError(vm, "Failed to open '%s'" %filename)
-		code = f.read()
-		f.close()
-		vm.farth.compile_and_execute(code)
+		vm.program.append(["INCLUDE"])
 	
 	@staticmethod
 	def dis(vm):

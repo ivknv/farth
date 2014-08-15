@@ -112,6 +112,23 @@ class FarthVM(object):
 		
 		pass
 	
+	def i_include(self):
+		"""Include code from file"""
+		
+		try:
+			filename = self.stack.pop()
+		except IndexError:
+			raise StackUnderflow(self.farth)
+		
+		try:
+			f = open(eval(filename))
+		except IOError:
+			raise FarthError(self.farth, "Failed to open '%s'" %filename)
+		code = f.read()
+		f.close()
+		self.farth.compile_and_execute(code)
+
+	
 	def i_lt(self):
 		"""Check if first value is smaller than second
 		(Remember rules of stack)"""
